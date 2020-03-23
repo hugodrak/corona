@@ -534,7 +534,7 @@ GCA
 GCG
 TAT Y
 TAC
-TAA STOP
+TAA $
 TAG
 CAT H
 CAC
@@ -550,16 +550,16 @@ GAA E
 GAG
 TGT C
 TGC
-TGA STOP
+TGA $
 TGG W
 CGT R
 CGC
 CGA
 CGG
+AGA
+AGG
 AGT S
 AGC
-AGA R
-AGG
 GGT G
 GGC
 GGA
@@ -570,31 +570,51 @@ prev_acid = ""
 for conv in convertions.split("\n"):
     combo = conv[:3]
     if len(conv) > 4:
-        lett = conv [4]
+        lett = conv[4:]
         prev_acid = lett
+    elif len(combo) == 0:
+        continue
     else:
         lett = prev_acid
     c_dict[combo] = lett
 
-
-proteines = []
 formatted_origin = ""
-#print(origin[:40])
-for dna_row in origin.split(" "):
-    if len(dna_row) == 10:
-        formatted_origin += dna_row.upper()
 
-chunks = [formatted_origin[x: x+3] for x in range(len(formatted_origin)) if x % 3 == 0]
-print(chunks[:4])
-print(c_dict)
-proteine = ""
-for chunk in chunks:
-    if len(chunk) == 3:
-        #if chunk == "ATG":
-        #    proteine += "M"
-        if chunk in ["TTA", "TGA", "TAG"]:
-            proteines.append(proteine)
-            proteine = ""
-        else:
-            proteine += c_dict[chunk]
-print(" ".join(proteines))
+for dna_row in origin.split("\n"):
+    letters = dna_row.split(" ")
+    for dna_chunk in letters:
+        if not any(char.isdigit() for char in dna_chunk) and dna_chunk != " ":
+            formatted_origin += dna_chunk.upper()
+
+formatted_origin = formatted_origin[2:]
+
+
+def decode(dna, offset=0):
+    dna = dna[offset:]
+    acids = []
+    chunks = [dna[x: x + 3] for x in range(len(dna)) if x % 3 == 0]
+    acid = ""
+    for i, chunk in enumerate(chunks):
+        if len(chunk) == 3:
+            if chunk in ["TAA", "TGA", "TAG"]:
+                try:
+                    index_m = acid.index("M")
+                    true_acid = acid[index_m:]
+                    if len(true_acid) < 40:
+                        continue
+                    start_index = i*3+4-len(true_acid)*3-(1-offset)
+                    acids.append([start_index, true_acid])
+                except:
+                    pass
+
+                acid = ""
+            else:
+                acid += c_dict[chunk]
+    return acids
+
+text0 = decode(formatted_origin, 0)
+text1 = decode(formatted_origin, 1)
+text2 = decode(formatted_origin, 2)
+all_text = text0+text1+text2
+all_text.sort()
+h=0
